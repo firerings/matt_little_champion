@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Matt, Little Champion</title>
+<style>
+:root{--g:#1f8a4c;--gd:#14603a;--y:#ffd23f;--r:#e8452c;--s:#bfe8f5;--c:#fffaf0;--ink:#25312b}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--s);color:var(--ink);font-family:ui-rounded,"Trebuchet MS","Segoe UI",Arial,sans-serif}
+#app{max-width:560px;margin:0 auto;min-height:100%;padding:12px 14px 24px;background:linear-gradient(var(--s) 0 55%,#8fd19e 55%)}
+.hud{display:flex;justify-content:space-between;align-items:center;background:var(--c);border:3px solid var(--gd);border-radius:18px;padding:8px 10px;font-weight:800;font-size:18px;gap:6px}
+.mood{display:flex;gap:3px}
+.mood span{font-size:22px;opacity:.28;filter:grayscale(1)}
+.mood span.on{opacity:1;filter:none;transform:scale(1.35)}
+.ml{text-align:center;font-weight:800;font-size:15px;margin-top:6px;color:var(--gd)}
+.card{background:var(--c);border:3px solid var(--gd);border-radius:24px;padding:18px;margin-top:12px;box-shadow:0 6px 0 var(--gd)}
+.big{font-size:60px;text-align:center;line-height:1.15;margin:4px 0}
+h1{font-size:32px;margin:6px 0;text-align:center;color:var(--gd)}
+h2{font-size:21px;margin:0 0 6px;color:var(--gd)}
+p{font-size:19px;line-height:1.4;margin:8px 0}
+button{font:inherit;font-weight:800;font-size:20px;width:100%;margin-top:10px;padding:14px;border-radius:16px;border:3px solid var(--gd);background:var(--y);color:var(--ink);box-shadow:0 4px 0 var(--gd);cursor:pointer;text-align:left}
+button:active{transform:translateY(3px);box-shadow:0 1px 0 var(--gd)}
+button:focus-visible{outline:4px solid var(--r);outline-offset:2px}
+button.go{background:var(--g);color:#fff;text-align:center}
+button.opt{background:#fff}
+button.ok{background:#8be08b}
+button.sm{width:auto;font-size:16px;padding:6px 12px;margin:0;text-align:center}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row button{flex:1 1 45%}
+.badges{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.b{background:#fff;border:2px dashed var(--gd);border-radius:14px;padding:8px;text-align:center;font-size:15px;font-weight:700}
+.b i{display:block;font-style:normal;font-size:34px}
+.tc{background:#fff;border:2px solid var(--gd);border-radius:14px;padding:10px;font-size:18px;margin-top:8px}
+.sw{width:84px;height:84px;border-radius:50%;padding:0;margin:6px;display:inline-block}
+#arena{position:relative;min-height:270px;background:#fff;border:3px solid var(--gd);border-radius:20px;overflow:hidden;margin-top:10px;touch-action:none;user-select:none}
+#arena.grid{display:grid;grid-template-columns:repeat(3,1fr);place-items:center;padding:10px}
+.it,.it2,.rb{font-size:46px;width:auto;background:none;border:0;box-shadow:none;padding:6px;margin:0;text-align:center}
+.it{position:absolute}
+.it2{background:#fff;border:2px solid var(--gd);border-radius:14px;margin:6px}
+.rb{display:block;font-size:54px;cursor:pointer}
+.dirty{filter:sepia(1) saturate(3) hue-rotate(-30deg) brightness(.65)}
+#star{position:absolute;font-size:46px;background:none;border:0;box-shadow:none;width:auto;padding:0;margin:0}
+.pulse{animation:p 4s ease-in-out}
+@keyframes p{0%,100%{transform:scale(1)}50%{transform:scale(1.4)}}
+@media(prefers-reduced-motion:reduce){.pulse{animation:none}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const F=['😊','😐','😠','😡'],FN=['Calm','Restless','Upset','Very angry'];
+const KIND="Teacher: “It’s okay, Matt. Everyone makes mistakes. Let’s calm down together and learn.”";
+const LV=[
+{t:'c',sc:'👩🏽‍🏫🛁',tx:'Teacher: “Matt, it’s bath time!”',m0:0,
+ o:[{e:'😤',t:'Shout and run away',m:2},{e:'😬',t:'Bite the teacher',m:3},{e:'🦆',t:'Choose a toy for the bath',ok:1}],
+ ln:'Bathing helps keep our body clean and healthy.',rw:'Hygiene Star! ⭐',bd:[{e:'🧼',n:'Hygiene Superhero'}],pet:0},
+{t:'c',sc:'🧸❓',tx:'Matt is angry because he can’t find his toy. What should he do?',m0:2,
+ o:[{e:'👊',t:'Hit',m:3},{e:'📢',t:'Shout',m:2},{e:'🙋',t:'Ask for help',ok:1}],
+ ln:'Hands are for helping, playing and learning.',rw:'Calm Hands Star! ⭐',bd:[{e:'👑',n:'King of Emotions'}],pet:1},
+{t:'a',sc:'🏫',tx:'Happy School! The teacher has four activities. Matt pays attention and joins in.',m0:0,
+ ln:'Listening and joining in helps us learn together.',rw:'School Star! ⭐',bd:[{e:'🎓',n:'School Star'},{e:'🤝',n:'Respectful Friend'}],pet:2},
+{t:'m',sc:'👩🏽👨🏽🏠',tx:'Angie and Marcos need help at home. Complete each mission to earn educational coins!',m0:0,
+ ln:'Helping at home makes our family happy.',rw:'Family Helper! ⭐',bd:[{e:'🏠',n:'Home Helper'}],pet:3}];
+const ACT=[
+{e:'🔢',q:'Numbers: tap each fish to count them!',k:'count'},
+{e:'🎨',q:'Colors: tap the YELLOW one!',k:'pick',o:[{c:'#e8452c',a:'red'},{c:'#ffd23f',a:'yellow',ok:1},{c:'#2b8be8',a:'blue'}]},
+{e:'🐆',q:'Animals of Guyana: tap the jaguar, a big cat of the rainforest!',k:'pick',o:[{x:'🐧',a:'penguin'},{x:'🐆',a:'jaguar',ok:1},{x:'🐘',a:'elephant'}]},
+{e:'🎵',q:'Nursery song: tap each star to sing along!',k:'song',p:['Twinkle, twinkle,','little star,','how I wonder','what you are!']}];
+const MS=[
+{e:'🧸',n:'Put toys away',tx:'Tap each toy to put it in the box.',run:()=>gToys(),fact:'Tidy toys are easy to find tomorrow. 5 toys = 5 happy hands!'},
+{e:'🙌',n:'Wash hands',tx:'Rub the dirty hands with your finger to wash them!',run:()=>gRub('🖐️',3,24,'Hands washed'),fact:'Soap and water wash germs away. Wash for as long as it takes to sing a song!'},
+{e:'🪥',n:'Brush teeth',tx:'Rub each dirty tooth until it sparkles!',run:()=>gRub('🦷',6,16,'Teeth brushed'),fact:'We brush our teeth in the morning and at night, for 2 minutes.'},
+{e:'🎒',n:'Pack the backpack',tx:'Tap only the things Matt needs for school.',run:()=>gPack(),fact:'Packing the night before makes school mornings calm.'}];
+const PETS=[{e:'🐆',n:'Jaguar'},{e:'🦜',n:'Macaw'},{e:'🐢',n:'Giant tortoise'},{e:'🐬',n:'River dolphin'}];
+const G=[{n:'Star Pop',e:'⭐',need:2,run:()=>starPop()},{n:'Animal Match',e:'🐾',need:6,run:()=>animalMatch()}];
+const TOOLS=[{e:'🌬️',n:'Breathe deeply'},{e:'🖐️',n:'Count to five'},{e:'🙋',n:'Ask for help'},{e:'💬',n:'Explain how I feel'}];
+const $=document.getElementById('app');
+let S,iv;
+function reset(){S={st:0,co:0,m:0,lv:0,sub:0,scr:'title',bd:[],pets:[],tl:null,tc:0,tp:[],note:'',un:[],lock:0,back:'title'};}
+reset();
+function addStars(n){const b=S.st;S.st+=n;G.forEach(g=>{if(b<g.need&&S.st>=g.need)S.un.push(g.n);});}
+function go(s){clearInterval(iv);if(s==='menu'&&S.scr!=='menu'&&S.scr!=='game')S.back=S.scr;S.scr=s;draw();}
+function hud(){return `<div class="hud"><span>⭐ ${S.st} &nbsp;🪙 ${S.co}</span><span class="mood" role="img" aria-label="${FN[S.m]}">${F.map((f,i)=>`<span class="${i===S.m?'on':''}">${f}</span>`).join('')}</span><button class="sm" onclick="go('menu')" aria-label="Minigames">🎮</button></div><div class="ml">${F[S.m]} ${FN[S.m]}</div>`;}
+function enter(){S.sub=0;S.tp=[];S.note='';S.lock=0;S.tl=null;S.m=LV[S.lv].m0;}
+function start(){S.lv=0;enter();go('lv');}
+function draw(){
+ const l=LV[S.lv];let h='';
+ if(S.scr==='game')return;
+ if(S.scr==='title'){$.innerHTML=`<div class="card"><div class="big">🧒🌴</div><h1>Matt, Little Champion</h1><p style="text-align:center">Matt lives with his parents in Guyana. Help him with his daily challenges: taking a bath, tidying toys, speaking with respect and calming his anger.</p><button class="go" onclick="start()">▶ Play</button></div>`;return;}
+ if(S.scr==='menu'){$.innerHTML=hud()+`<div class="card"><h2>🎮 Minigames</h2><p>Earn stars by cooperating to unlock them!</p>`+G.map((g,i)=>S.st>=g.need?`<button class="opt" onclick="G[${i}].run()">${g.e} ${g.n}</button>`:`<button class="opt" disabled style="opacity:.5">🔒 ${g.n} (needs ${g.need} ⭐)</button>`).join('')+`<button class="go" onclick="go(S.back)">Back</button></div>`;return;}
+ if(S.scr==='lv'){
+  h=`<div class="card"><div class="big">${l.sc}</div><p>${l.tx}</p>`;
+  if(l.t==='c')h+=l.o.map((o,i)=>`<button class="opt" onclick="pick(${i})">${o.e} ${o.t}</button>`).join('');
+  if(l.t==='a')h+=act();
+  if(l.t==='m'){const m=MS[S.sub];h=`<div class="card"><div class="big">${m.e}</div><h2>Mission ${S.sub+1} of 4: ${m.n}</h2><p id="gt">${m.tx}</p><div id="arena"></div>`;}
+  $.innerHTML=hud()+h+'</div>';
+  if(l.t==='m')MS[S.sub].run();return;}
+ if(S.scr==='coin'){const m=MS[S.sub];$.innerHTML=hud()+`<div class="card"><div class="big">🪙</div><h2>Educational coin earned!</h2><div class="tc">${m.fact}</div><button class="go" onclick="nextMission()">${S.sub>=3?'Finish ▶':'Next mission ▶'}</button></div>`;return;}
+ if(S.scr==='calm'){
+  h=`<div class="card"><div class="big">${F[S.m]}</div><h2>Calm corner</h2><div class="tc">👩🏽‍🏫 ${S.note||KIND}</div>`;
+  if(S.m>0){
+   if(S.tl===null)h+=`<p>Help Matt feel calm. Choose a way:</p><div class="row">`+TOOLS.map((x,i)=>`<button class="opt" onclick="S.tl=${i};S.tc=0;draw()">${x.e} ${x.n}</button>`).join('')+'</div>';
+   else h+=tool();
+  }else h+=`<div class="tc"><b>Let’s learn:</b> ${l.ln}</div><p>Matt is calm now. Let’s make a better choice!</p><button class="go" onclick="S.note='';go('lv')">🔁 Try again</button>`;
+  $.innerHTML=hud()+h+'</div>';return;}
+ if(S.scr==='win'){
+  $.innerHTML=hud()+`<div class="card"><div class="big">🌟</div><h2>${l.rw}</h2><div class="tc">${l.ln}</div>`+
+  l.bd.map(b=>`<p>🏅 New badge: <b>${b.e} ${b.n}</b></p>`).join('')+`<p>New pet: <b>${PETS[l.pet].e} ${PETS[l.pet].n}</b></p>`+
+  S.un.map(n=>`<p>🎮 <b>New minigame unlocked: ${n}!</b></p>`).join('')+`<button class="go" onclick="nextLv()">Next ▶</button></div>`;return;}
+ if(S.scr==='end'){
+  $.innerHTML=hud()+`<div class="card"><div class="big">🏆</div><h1>Little Champion!</h1><h2>Badges</h2><div class="badges">`+S.bd.map(b=>`<div class="b"><i>${b.e}</i>${b.n}</div>`).join('')+`<div class="b"><i>🏆</i>Little Champion</div></div><h2 style="margin-top:12px">Virtual pets</h2><div class="badges">`+S.pets.map(p=>`<div class="b"><i>${p.e}</i>${p.n}</div>`).join('')+`</div><p style="margin-top:12px"><b>“We can all make mistakes, but every day we have a chance to learn, respect others and take care of ourselves.”</b></p><button onclick="go('menu')">🎮 Minigames</button><button class="go" onclick="reset();go('title')">Play again</button></div>`;}
+}
+function pick(i){const o=LV[S.lv].o[i];if(o.ok){addStars(1);S.m=0;win();}else{S.m=Math.max(S.m,o.m);S.note='';S.tl=null;go('calm');}}
+function win(){const l=LV[S.lv];l.bd.forEach(b=>S.bd.push(b));S.pets.push(PETS[l.pet]);go('win');}
+function nextLv(){S.un=[];S.lv++;if(S.lv>=LV.length){S.m=0;go('end');}else{enter();go('lv');}}
+function tool(){
+ const t=S.tl,c=S.tc;
+ const done=m=>{S.m=Math.max(0,S.m-1);S.tl=null;S.note=m;draw();};
+ if(t===0){if(c>=4){done('Teacher: “Well done, Matt! Slow breaths help our body relax.”');return '';}
+  return `<p class="pulse"><b>${c%2?'Breathe OUT slowly…':'Breathe IN slowly…'}</b></p><button class="go" onclick="S.tc++;draw()">${c%2?'😮‍💨 Out':'🌬️ In'} (tap)</button>`;}
+ if(t===1){if(c>=5){done('Teacher: “Great counting! Matt’s body is slowing down.”');return '';}
+  return `<p><b>${Array.from({length:c},(_,i)=>i+1).join(' … ')||'Ready?'}</b></p><button class="go" onclick="S.tc++;draw()">Count ${c+1}</button>`;}
+ if(t===2)return `<p>Matt raises his hand and asks for help.</p><button class="go" onclick="S.tl=null;S.m=Math.max(0,S.m-1);S.note='“I’m here to help you, Matt. Thank you for asking!”';draw()">🙋 “Teacher, can you help me, please?”</button>`;
+ return `<p>How does Matt feel?</p>`+['😠 I feel angry','😢 I feel sad','😤 I feel frustrated'].map(f=>`<button class="opt" onclick="S.tl=null;S.m=Math.max(0,S.m-1);S.note='“Thank you for telling me how you feel, Matt. Words help.”';draw()">${f}</button>`).join('');
+}
+function act(){
+ const a=ACT[S.sub];let h=`<h2>${S.sub+1} of 4</h2><p><b>${a.q}</b></p>`;
+ if(a.k==='count')h+=`<div class="row">`+[0,1,2,3,4].map(i=>`<button class="${S.tp.includes(i)?'ok':'opt'}" style="text-align:center" onclick="tap(${i})">🐟${S.tp.includes(i)?S.tp.indexOf(i)+1:''}</button>`).join('')+`</div>`;
+ if(a.k==='pick')h+=`<div style="text-align:center">`+a.o.map((o,i)=>o.c?`<button class="sw" aria-label="${o.a}" style="background:${o.c}" onclick="ans(${i})"></button>`:`<button class="sw opt" aria-label="${o.a}" style="font-size:44px" onclick="ans(${i})">${o.x}</button>`).join('')+`</div>`;
+ if(a.k==='song')h+=`<p style="font-size:22px;min-height:60px"><b>${a.p.slice(0,S.tp.length).join(' ')}</b></p><div class="row">`+a.p.map((_,i)=>`<button class="${i<S.tp.length?'ok':'opt'}" style="text-align:center" onclick="tap(${i})">⭐</button>`).join('')+`</div>`;
+ if(S.note)h+=`<p class="pulse">💛 ${S.note}</p>`;return h;}
+function tap(i){if(S.lock||S.tp.includes(i))return;const a=ACT[S.sub];
+ if(a.k==='song'&&i!==S.tp.length)return;
+ S.tp.push(i);if(S.tp.length>=(a.k==='song'?4:5)){actDone();}else draw();}
+function ans(i){if(S.lock)return;if(ACT[S.sub].o[i].ok)actDone();else{S.note='Almost! Look again and try another one.';draw();}}
+function actDone(){S.lock=1;addStars(1);S.note='Great job, Matt! ⭐';draw();
+ setTimeout(()=>{if(S.scr!=='lv')return;S.lock=0;S.sub++;S.tp=[];S.note='';if(S.sub>=4)win();else draw();},1100);}
+function $a(){const a=document.getElementById('arena');a.className='';a.onpointermove=null;return a;}
+function gt(m){document.getElementById('gt').textContent=m;}
+function missionDone(){S.co++;setTimeout(()=>{if(S.scr==='lv')go('coin');},500);}
+function nextMission(){S.sub++;if(S.sub>=4){addStars(1);win();}else go('lv');}
+function gToys(){const a=$a(),E=['🧸','🚗','🪀','⚽','🧩'];let n=0;
+ a.innerHTML=E.map((e,i)=>`<button class="it" style="left:${(i%3)*31+6}%;top:${Math.floor(i/3)*42+8}%">${e}</button>`).join('')+'<div style="position:absolute;right:10px;bottom:2px;font-size:60px">📦</div>';
+ a.querySelectorAll('.it').forEach(b=>b.onclick=()=>{b.style.visibility='hidden';n++;gt(`📦 ${n} of 5 toys tidied`);if(n==5)missionDone();});}
+function gRub(em,n,need,w){const a=$a();let d=0;const h=[];a.className='grid';
+ a.innerHTML=Array.from({length:n},(_,i)=>`<span class="rb dirty" data-i="${i}">${em}</span>`).join('');
+ const hit=(el,k)=>{if(!el||el.dataset.i==null||el.dataset.d)return;const i=el.dataset.i;h[i]=(h[i]||0)+k;if(h[i]>=need){el.dataset.d=1;el.classList.remove('dirty');el.textContent=em+'✨';d++;gt(`${w}: ${d} of ${n}`);if(d==n)missionDone();}};
+ a.onpointermove=e=>hit(document.elementFromPoint(e.clientX,e.clientY),1);
+ a.querySelectorAll('.rb').forEach(x=>x.onclick=()=>hit(x,8));}
+function gPack(){const a=$a(),I=[['📒',1],['🎮',0],['✏️',1],['🧸',0],['🥤',1],['🍎',1]];let n=0;
+ a.innerHTML='<div style="text-align:center;padding:8px">'+I.map((x,i)=>`<button class="it2" data-i="${i}">${x[0]}</button>`).join('')+'</div><div style="text-align:center;font-size:54px">🎒</div>';
+ a.querySelectorAll('.it2').forEach(b=>b.onclick=()=>{if(I[b.dataset.i][1]){b.style.visibility='hidden';n++;gt(`🎒 ${n} of 4 packed`);if(n==4)missionDone();}else gt('That one stays home today. Pick what Matt needs for school!');});}
+function gameShell(title,inner){S.scr='game';clearInterval(iv);$.innerHTML=hud()+`<div class="card"><h2>${title}</h2>${inner}</div>`;}
+function starPop(){let n=0,left=12;gameShell('⭐ Star Pop','<p id="gt">Tap the stars! 12 seconds.</p><div id="arena"></div>');
+ const a=document.getElementById('arena');
+ const place=()=>{a.innerHTML=`<button id="star" aria-label="star" style="left:${Math.random()*80+3}%;top:${Math.random()*75+3}%">⭐</button>`;a.firstChild.onclick=()=>{n++;place();};};place();
+ iv=setInterval(()=>{left--;if(left<=0){clearInterval(iv);gt(`You popped ${n} stars! 🎉`);a.innerHTML='<div class="big" style="padding-top:90px">🎉</div>';a.insertAdjacentHTML('afterend','<button class="go" onclick="go(\'menu\')">Back</button>');}},1000);}
+function animalMatch(){let r=0,sc=0;
+ const round=()=>{if(r>=5){gameShell('🐾 Animal Match',`<div class="big">🎉</div><p><b>You got ${sc} of 5!</b></p><button class="go" onclick="go('menu')">Back</button>`);return;}
+  const c=PETS[Math.floor(Math.random()*4)],o=PETS.slice().sort(()=>Math.random()-.5).slice(0,3);if(!o.includes(c))o[0]=c;o.sort(()=>Math.random()-.5);
+  gameShell('🐾 Animal Match',`<p><b>Round ${r+1} of 5: tap the ${c.n}!</b></p><div style="text-align:center">`+o.map((p,i)=>`<button class="sw opt" style="font-size:44px" data-n="${p.n}">${p.e}</button>`).join('')+'</div>');
+  $.querySelectorAll('.sw').forEach(b=>b.onclick=()=>{if(b.dataset.n===c.n)sc++;r++;round();});};
+ round();}
+draw();
+</script>
+</body>
+</html>
